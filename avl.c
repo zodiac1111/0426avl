@@ -3,7 +3,7 @@
  * */
 #include<stdio.h>
 #include<stdlib.h>
-#define N 8192			//插入节点个数i 2^13
+#define N 10000			//插入节点个数i 2^13
 #define LL 3
 #define LR 1
 #define RR -3
@@ -17,6 +17,7 @@ typedef struct tree {
 Tree *create_leaf(int value)
 {
 	Tree *newleaf = (Tree *) malloc(sizeof(Tree));
+	newleaf->bf = 0;
 	newleaf->data = value;
 	newleaf->lift = NULL;
 	newleaf->right = NULL;
@@ -122,7 +123,8 @@ Tree *del_tree(Tree * root, int value)
 }
 
 // 按值 沿顶到底查找并更新平衡因子.
-Tree *updatebf(Tree * root, int value)
+/*
+ * Tree *updatebf(Tree * root, int value)
 {
 	if (root != NULL) {
 		if (root->data == value) {
@@ -141,22 +143,23 @@ Tree *updatebf(Tree * root, int value)
 	}
 	return root;
 }
-
+*/
+//更新平衡因子并且返回找到的a值
 Tree *finda(Tree * root, int value)	//循环查找节点
 {
 	Tree *a = NULL;
-	//if (root == child)
-	//      return NULL;
 	while (root != NULL) {
 		if (root->data == value) {
+			root->bf = length(root->lift) - length(root->right);
 			if (root->bf == 2 || root->bf == -2) {
 				a = root;
 			} else {
 				return a;
 			}
 		}
-		//p = root;
 		if (root->data > value) {
+			root->bf = length(root->lift) - length(root->right);
+
 			if (root->lift != NULL) {
 				if (root->bf == 2 || root->bf == -2) {
 					a = root;
@@ -165,6 +168,8 @@ Tree *finda(Tree * root, int value)	//循环查找节点
 			}
 		}
 		if (root->data < value) {
+			root->bf = length(root->lift) - length(root->right);
+
 			if (root->right != NULL) {
 				if (root->bf == 2 || root->bf == -2) {
 					a = root;
@@ -192,9 +197,9 @@ int adjust(Tree * a)
 
 Tree *findparent(Tree * root, Tree * child)	//循环查找父节点
 {
-	Tree *p;
+	Tree *p=NULL;
 	if (root == child)
-		return NULL;
+		return p;
 	while (root != NULL) {
 		if (root == child) {
 			return p;
@@ -221,9 +226,9 @@ Tree *findparent(Tree * root, Tree * child)	//循环查找父节点
 Tree *change(Tree * root, Tree * a, int type)
 {
 	Tree *ret = root;
-	Tree *p;		//parent of a.
-	Tree *b;
-	Tree *c;
+	Tree *p=NULL;		//parent of a.
+	Tree *b=NULL;
+	Tree *c=NULL;
 	p = findparent(root, a);
 	switch (type) {
 	case LL:
@@ -309,7 +314,7 @@ Tree *avl_insert(Tree * root, int value)
 	//1普通插入
 	insert_tree(root, value);
 	//2更新祖先的平衡因子
-	updatebf(root, value);
+	//updatebf(root, value);
 	//3 找A点
 	Tree *a = NULL;
 	a = finda(root, value);
@@ -327,7 +332,7 @@ Tree *avl_insert(Tree * root, int value)
 		root = change(root, a, type);
 		//仅更新a和其祖先(其兄弟不可能为2/-2)
 		//
-		updatebf(root, a->data);
+		//updatebf(root, a->data);
 		//再找a
 		a = NULL;
 		a = finda(root, value);
@@ -338,17 +343,35 @@ Tree *avl_insert(Tree * root, int value)
 
 int main(int argc, char *argv[])
 {
+	//三种情况条件编译
+#if SMALL
+	Tree *root = create_leaf(13);
+	root = avl_insert(root, 24);
+	root = avl_insert(root, 37);
+	root = avl_insert(root, 90);
+	root = avl_insert(root, 53);
+	root = avl_insert(root, 39);
+	root = avl_insert(root, 14);
+	root = avl_insert(root, 22);
+	root = avl_insert(root, 26);
+	root = avl_insert(root, 12);
+	root = avl_insert(root, 20);
+#endif
+
+#if ORDER
 	int i;
 	Tree *root = create_leaf(N / 2);
-//      randomize();
 	for (i = 1; i < N; i++)
 		root = avl_insert(root, i);
-	//root = avl_insert(root, 37);
-	//root = avl_insert(root, 90);
-	//root = avl_insert(root, 53);
-	//root = avl_insert(root, 39);
-	//root = avl_insert(root, 14);
-	//root = avl_insert(root, 22);
+#endif
+
+#if RANDOM
+	int i;
+	Tree *root = create_leaf(N / 2);
+	for (i = 1; i < N; i++)
+		root = avl_insert(root, random() % N);
+#endif
+
 	printf("len of tree is %d\n", length(root));
 	//inorder(root);
 	printf("\n");

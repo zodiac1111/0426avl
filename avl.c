@@ -4,14 +4,21 @@
 #include<stdio.h>
 #include<stdlib.h>
 #define N 10000			//插入节点个数i 2^13
-#define LL 3
+/*#define LL 3
 #define LR 1
 #define RR -3
 #define RL -1
+*/
+enum nodetype{
+	LL=3,
+	LR=1,
+	RR=-3,
+	RL=-1,
+};
 typedef struct tree {
 	int data;
 	signed int bf;		//平衡因子
-	struct tree *lift;
+	struct tree *left;
 	struct tree *right;
 } Tree;
 Tree *create_leaf(int value)
@@ -19,7 +26,7 @@ Tree *create_leaf(int value)
 	Tree *newleaf = (Tree *) malloc(sizeof(Tree));
 	newleaf->bf = 0;
 	newleaf->data = value;
-	newleaf->lift = NULL;
+	newleaf->left = NULL;
 	newleaf->right = NULL;
 	return newleaf;
 
@@ -30,7 +37,7 @@ void preorder(Tree * root)	//先序
 	if (root == NULL)
 		return;
 	printf("%d ", root->data);	//遍历中的操作,这里仅仅打印.
-	preorder(root->lift);
+	preorder(root->left);
 	preorder(root->right);
 }
 
@@ -38,7 +45,7 @@ void inorder(Tree * root)	//中序
 {
 	if (root == NULL)
 		return;
-	inorder(root->lift);
+	inorder(root->left);
 	printf("%d ", root->data);
 	inorder(root->right);
 }
@@ -48,7 +55,7 @@ void postorder(Tree * root)	//后序
 	if (root == NULL) {
 		return;
 	}
-	postorder(root->lift);
+	postorder(root->left);
 	postorder(root->right);
 	printf("%d ", root->data);
 }
@@ -57,11 +64,11 @@ void postorder(Tree * root)	//后序
 void insert_tree(Tree * root, int value)	//插入一个已经存在的节点,不操作,插入成中序.
 {
 	if (value < root->data) {	//比根小,插入成左叶子.
-		if (root->lift == NULL) {	//空,插入
-			root->lift = create_leaf(value);
+		if (root->left == NULL) {	//空,插入
+			root->left = create_leaf(value);
 			return;
 		} else {	//非空,递归
-			insert_tree(root->lift, value);
+			insert_tree(root->left, value);
 		}
 	} else if (value > root->data) {	//比跟大,插入成右叶子
 		if (root->right == NULL) {	//空,插入
@@ -81,7 +88,7 @@ int length(Tree * root)		// 高度
 		return 0;
 	else {
 		int i = 0, j = 0;
-		i = 1 + length(root->lift);
+		i = 1 + length(root->left);
 		j = 1 + length(root->right);
 		return i > j ? i : j;
 	}
@@ -89,15 +96,15 @@ int length(Tree * root)		// 高度
 
 Tree *del_node(Tree * p)
 {
-	if (p->lift != NULL) {
-		Tree *r = p->lift;	//r指向其左子树;
+	if (p->left != NULL) {
+		Tree *r = p->left;	//r指向其左子树;
 		while (r->right != NULL)	//搜索左子树的最右边的叶子结点r
 		{
 			r = r->right;
 		}
 		r->right = p->right;
 
-		Tree *q = p->lift;	//q指向其左子树;
+		Tree *q = p->left;	//q指向其左子树;
 		free(p);
 		return q;
 	} else {
@@ -113,7 +120,7 @@ Tree *del_tree(Tree * root, int value)
 		if (root->data == value) {
 			root = del_node(root);
 		} else if (root->data > value) {	//没找到,递归查找
-			root->lift = del_tree(root->lift, value);
+			root->left = del_tree(root->left, value);
 
 		} else {
 			root->right = del_tree(root->right, value);
@@ -130,14 +137,14 @@ Tree *del_tree(Tree * root, int value)
 		if (root->data == value) {
 			//root = del_node(root);
 			//计算插入值的平衡因子
-			root->bf = length(root->lift) - length(root->right);
+			root->bf = length(root->left) - length(root->right);
 		} else if (root->data > value) {	//没找到,递归查找
 
-			root->bf = length(root->lift) - length(root->right);
-			root->lift = updatebf(root->lift, value);
+			root->bf = length(root->left) - length(root->right);
+			root->left = updatebf(root->left, value);
 
 		} else {
-			root->bf = length(root->lift) - length(root->right);
+			root->bf = length(root->left) - length(root->right);
 			root->right = updatebf(root->right, value);
 		}
 	}
@@ -150,7 +157,7 @@ Tree *finda(Tree * root, int value)	//循环查找节点
 	Tree *a = NULL;
 	while (root != NULL) {
 		if (root->data == value) {
-			root->bf = length(root->lift) - length(root->right);
+			root->bf = length(root->left) - length(root->right);
 			if (root->bf == 2 || root->bf == -2) {
 				a = root;
 			} else {
@@ -158,17 +165,17 @@ Tree *finda(Tree * root, int value)	//循环查找节点
 			}
 		}
 		if (root->data > value) {
-			root->bf = length(root->lift) - length(root->right);
+			root->bf = length(root->left) - length(root->right);
 
-			if (root->lift != NULL) {
+			if (root->left != NULL) {
 				if (root->bf == 2 || root->bf == -2) {
 					a = root;
 				}
-				root = root->lift;
+				root = root->left;
 			}
 		}
 		if (root->data < value) {
-			root->bf = length(root->lift) - length(root->right);
+			root->bf = length(root->left) - length(root->right);
 
 			if (root->right != NULL) {
 				if (root->bf == 2 || root->bf == -2) {
@@ -185,8 +192,8 @@ Tree *finda(Tree * root, int value)	//循环查找节点
 //判断a的类型 LL LR RR RL四种
 int adjust(Tree * a)
 {
-	if (a->bf == 2 && a->lift != NULL) {
-		return a->lift->bf + a->bf;
+	if (a->bf == 2 && a->left != NULL) {
+		return a->left->bf + a->bf;
 	}
 	if (a->bf == -2 && a->right != NULL) {
 		return a->right->bf + a->bf;
@@ -206,8 +213,8 @@ Tree *findparent(Tree * root, Tree * child)	//循环查找父节点
 		}
 		p = root;
 		if (root->data > child->data) {
-			if (root->lift != NULL) {
-				root = root->lift;
+			if (root->left != NULL) {
+				root = root->left;
 				continue;
 			}
 		}
@@ -232,15 +239,15 @@ Tree *change(Tree * root, Tree * a, int type)
 	p = findparent(root, a);
 	switch (type) {
 	case LL:
-		b = a->lift;
+		b = a->left;
 
-		a->lift = b->right;
+		a->left = b->right;
 		b->right = a;
 		if (root == a)
 			ret = b;
 		else {
-			if (p->lift == a)
-				p->lift = b;
+			if (p->left == a)
+				p->left = b;
 			if (p->right == a)
 				p->right = b;
 		}
@@ -248,19 +255,19 @@ Tree *change(Tree * root, Tree * a, int type)
 		break;
 	case LR:
 		//1
-		b = a->lift;
+		b = a->left;
 		c = b->right;
 		//2
-		b->right = c->lift;
-		a->lift = c->right;
-		c->lift = b;
+		b->right = c->left;
+		a->left = c->right;
+		c->left = b;
 		c->right = a;
 		//3
 		if (p == NULL)
 			ret = c;
 		else {
-			if (p->lift == a)
-				p->lift = c;
+			if (p->left == a)
+				p->left = c;
 			if (p->right == a)
 				p->right = c;
 		}
@@ -269,31 +276,31 @@ Tree *change(Tree * root, Tree * a, int type)
 	case RR:
 		b = a->right;
 
-		a->right = b->lift;
-		b->lift = a;
+		a->right = b->left;
+		b->left = a;
 		if (p == NULL)
 			ret = b;
 		else {
-			if (p->lift == a)
-				p->lift = b;
+			if (p->left == a)
+				p->left = b;
 			if (p->right == a)
 				p->right = b;
 		}
 		break;
 	case RL:
 		b = a->right;
-		c = b->lift;
+		c = b->left;
 		//
-		a->right = c->lift;
-		b->lift = c->right;
-		c->lift = a;
+		a->right = c->left;
+		b->left = c->right;
+		c->left = a;
 		c->right = b;
 		//
 		if (p == NULL)
 			ret = c;
 		else {
-			if (p->lift == a)
-				p->lift = c;
+			if (p->left == a)
+				p->left = c;
 			if (p->right == a)
 				p->right = c;
 		}
